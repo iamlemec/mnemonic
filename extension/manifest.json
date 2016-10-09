@@ -1,0 +1,14 @@
+{
+  "name": "WikiNav",
+  "version": "0.1",
+  "description": "Stores Wikipedia history and gives suggestions.",
+  "permissions": [
+    "history",
+    "webNavigation",
+    "*://*/*"
+  ],
+  "background": {
+    "scripts": ["wikinav.js"]
+  },
+  "manifest_version": 2
+}
