@@ -1,0 +1,119 @@
+@import url('source-sans-pro.css');
+
+html {
+  font-family: 'Source Sans Pro', serif;
+}
+
+html::-webkit-scrollbar {
+  display: none;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+*:focus {
+  outline: 0;
+}
+
+body {
+  background: #313437;
+  color: #E7F3FD;
+}
+
+#title {
+  font-size: 40px;
+  text-align: center;
+  margin-top: 30px;
+  margin-bottom: 20px;
+}
+
+#outer {
+  margin: auto;
+  width: 900px;
+}
+
+#left {
+  float: left;
+  width: 30%;
+  border-bottom: 1px solid #2095F0;
+}
+
+#right {
+  float: left;
+  width: 70%;
+  border: 1px solid #2095F0;
+  border-left: 0px;
+}
+
+#query {
+  width: 100%;
+  font-size: 17px;
+  padding: 5px;
+  height: 30px;
+  border: 1px solid #4284F2;
+  background: #313437;
+  color: #E7F3FD;
+}
+
+#results {
+  height: 540px;
+  overflow-y: scroll;
+  border-left: 1px solid #2095F0;
+  border-right: 1px solid #2095F0;
+}
+
+#output {
+  height: 569px;
+  overflow-y: scroll;
+  margin: 0px 0px 0px 0px;
+  padding: 40px 70px 60px 70px;
+  text-align: justify;
+}
+
+#results::-webkit-scrollbar {
+  display: none;
+}
+
+#output::-webkit-scrollbar {
+  display: none;
+}
+
+#navbar {
+}
+
+.tb_box {
+  position: relative;
+  /*border-bottom: 1px solid #939496;*/
+  width: 100%;
+  padding: 5px;
+}
+
+.tb_box:last-child {
+  border-bottom: 0px;
+}
+
+.tb_box.selected {
+  background-color: #4284F2;
+  color: white;
+}
+
+.tb_title {
+  cursor: default;
+  /*font-weight: bold;*/
+  margin-right: 3px;
+  min-height: 20px;
+  width: 100%;
+}
+
+/* theme */
+
+#output h3 {
+  margin-top: 35px;
+}
+
+#output a {
+  text-decoration: none;
+  /*color: rgb(53, 122, 232);*/
+  color: #2095F0;
+}

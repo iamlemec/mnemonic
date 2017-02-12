@@ -88,45 +88,46 @@ class WikiParser:
             traceback.print_stack()
             raise(Exception('Unrecognized Type %s: %s' % (t,node)))
 
-    # def parse_text(self,node):
-    #     t = type(node)
-    #     if node is None:
-    #         return ''
-    #     elif t is mw.wikicode.Wikicode:
-    #         return ''.join([self.parse_text(n) for n in node.nodes])
-    #     elif t is mw.nodes.Template:
-    #         return ''
-    #     elif t is mw.nodes.Argument:
-    #         return ''
-    #     elif t is mw.nodes.Wikilink:
-    #         if node.title.startswith('Image:') or node.title.startswith('Category:') or node.title.startswith('File:'):
-    #             return ''
-    #         else:
-    #             return self.parse_text(node.title)
-    #     elif t is mw.nodes.Heading:
-    #         return self.parse_text(node.title)
-    #     elif t is mw.nodes.ExternalLink:
-    #         if node.title:
-    #             return self.parse_text(node.title)
-    #         else:
-    #             return ''
-    #     elif t is mw.nodes.extras.Parameter:
-    #         return self.parse_text(node.value)
-    #     elif t is mw.nodes.Tag:
-    #         if node.tag in ('gallery','ref'):
-    #             return ''
-    #         else:
-    #             return self.parse_text(node.contents)
-    #     elif t is mw.nodes.Comment:
-    #         return self.parse_text(node.contents)
-    #     elif t is mw.nodes.HTMLEntity:
-    #         return node.normalize()
-    #     elif t is mw.nodes.Text:
-    #         return self.parse_text(node.value)
-    #     elif t is str:
-    #         return node
-    #     else:
-    #         raise(Exception('Unrecognized Type %s: %s' % (t,node)))
+    def parse_text(self,node):
+        t = type(node)
+        if node is None:
+            return ''
+        elif t is mw.wikicode.Wikicode:
+            return ''.join([self.parse_text(n) for n in node.nodes])
+        elif t is mw.nodes.Template:
+            return ''
+        elif t is mw.nodes.Argument:
+            return ''
+        elif t is mw.nodes.Wikilink:
+            if node.title.startswith('Image:') or node.title.startswith('Category:') or node.title.startswith('File:'):
+                return ''
+            else:
+                return self.parse_text(node.title)
+        elif t is mw.nodes.Heading:
+            return self.parse_text(node.title)
+        elif t is mw.nodes.ExternalLink:
+            if node.title:
+                return self.parse_text(node.title)
+            else:
+                return ''
+        elif t is mw.nodes.extras.Parameter:
+            return self.parse_text(node.value)
+        elif t is mw.nodes.Tag:
+            if node.tag in ('gallery','ref'):
+                return ''
+            else:
+                return self.parse_text(node.contents)
+        elif t is mw.nodes.Comment:
+            return self.parse_text(node.contents)
+        elif t is mw.nodes.HTMLEntity:
+            return node.normalize()
+        elif t is mw.nodes.Text:
+            return self.parse_text(node.value)
+        elif t is str:
+            return node
+        else:
+            traceback.print_stack()
+            raise(Exception('Unrecognized Type %s: %s' % (t,node)))
 
 # instance
 parser = WikiParser()
@@ -138,3 +139,13 @@ def to_html(wiki):
     html = parser.parse_html(tree)
     html = re.sub(r'(<br/>){2,}','<br/>',html)
     return html
+
+def to_text(wiki):
+    wiki = html_unescape(wiki)
+    tree = mw.parse(wiki)
+    parser.initialize()
+    text = parser.parse_text(tree)
+    text = re.sub(r' +\n', '\n', text)
+    text = re.sub(r'\n{2,}', '\n\n', text)
+    return text.strip()
+

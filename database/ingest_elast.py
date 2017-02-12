@@ -11,7 +11,7 @@ import indexer_elast as ix
 # parse input arguments
 parser = argparse.ArgumentParser(description='Nemonic Server.')
 parser.add_argument('wiki_fname', type=str, help='filename of wikipedia')
-parser.add_argument('--index_name', type=str, default='wikipedia', help='name of elasticsearch index')
+parser.add_argument('--index', type=str, default='wikipedia', help='name of elasticsearch index')
 parser.add_argument('--limit', type=int, default=None, help='number of articles to parse')
 args = parser.parse_args()
 
@@ -24,7 +24,7 @@ revn_tag = namespace + 'revision'
 text_tag = namespace + 'text'
 
 # initialize/open database
-con = ix.Connection(index=args.index_name)
+con = ix.Connection(index=args.index)
 
 # revert html codes
 hp = HTMLParser()

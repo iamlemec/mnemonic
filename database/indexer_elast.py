@@ -50,7 +50,7 @@ class Connection:
             'from': base,
             'size': size
         }, _source=['id', 'title'])
-        hits = [ (d['_id'], d['_source']) for d in ret['hits']['hits'] ]
+        hits = [ (d['_id'], d['_source']['title']) for d in ret['hits']['hits'] ]
         if raw:
             return hits
         else:
@@ -63,6 +63,9 @@ class Results:
         self.base = base
         self.size = size
         self.res = res
+
+    def __iter__(self):
+        return iter(self.res)
 
     def next(self, n=10):
         self.base += self.size
