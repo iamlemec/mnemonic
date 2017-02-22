@@ -10,8 +10,10 @@ import tornado.ioloop
 import tornado.web
 import tornado.websocket
 
-import parser as ps
-import indexer as ix
+# what shit
+sys.path.append(os.path.abspath('../database'))
+import wiki_parser as wp
+import indexer_elast as ix
 
 # options
 block_size = 25 # result chunk size
@@ -22,12 +24,12 @@ quotes = re.compile(r'\"([^\"]*)\"')
 
 # parse input arguments
 parser = argparse.ArgumentParser(description='Mnemonic Server.')
-parser.add_argument('db_fname', type=str, help='filename of database')
-parser.add_argument('--port', type=int, default=9001, help='port to serve on')
+parser.add_argument('--index', type=str, default='wikipedia', help='name of index')
+parser.add_argument('--port', type=int, default=9010, help='port to serve on')
 args = parser.parse_args()
 
-# initialize/open database
-con = ix.connect(args.db_fname)
+# initialize connection
+con = ix.Connection(index=args.index)
 
 # code generation
 wiki_template = """
@@ -70,9 +72,8 @@ class TidbitHandler(tornado.websocket.WebSocketHandler):
         (cmd,cont) = (data['cmd'],data['content'])
         if cmd == 'query':
             try:
-                self.results = con.search(cont)
-                ids = self.results.fetchmany(block_size)
-                block = [{'tid': i, 'title': con.fetch_title(i)} for i in ids]
+                self.results = con.search(cont, size=block_size)
+                block = [{'tid': i, 'title': t} for (i, t) in self.results]
                 reset = True
                 done = (len(block) < block_size)
             except Exception as e:
@@ -83,25 +84,31 @@ class TidbitHandler(tornado.websocket.WebSocketHandler):
                 block = [{'tid': -1, 'title': 'Error'}]
             self.write_message(json.dumps({'cmd': 'results', 'content': {'reset': reset, 'done': done, 'results': block}}))
         elif cmd == 'moar':
-            ids = self.results.fetchmany(block_size)
-            block = [{'tid': i, 'title': con.fetch_title(i)} for i in ids]
+            self.results.next()
+            block = [{'tid': i, 'title': t} for (i, t) in self.results]
             reset = False
             done = (len(block) < block_size)
             self.write_message(json.dumps({'cmd': 'results', 'content': {'reset': reset, 'done': done, 'results': block}}))
         elif cmd == 'text':
             try:
                 doc = con.fetch(cont)
-                html = ps.to_html(doc.body)
-                text = wiki_template.format(title=doc.title,body=html)
-                self.write_message(json.dumps({'cmd': 'text', 'content': text}))
+                title = doc['title']
+                wiki = doc['body']
+                html = wp.to_html(wiki)
+                text = wiki_template.format(title=title,body=html)
+                self.write_message(json.dumps({'cmd': 'text', 'content': {'tid': cont, 'title': title, 'html': text}}))
             except Exception as e:
                 print(e)
         elif cmd == 'link':
             id = con.link(cont)
+            print(id)
             if id is not None:
                 doc = con.fetch(id)
-                text = wiki_template.format(title=doc.title,body=doc.body)
-                self.write_message(json.dumps({'cmd': 'text', 'content': text}))
+                title = doc['title']
+                wiki = doc['body']
+                html = wp.to_html(wiki)
+                text = wiki_template.format(title=title,body=html)
+                self.write_message(json.dumps({'cmd': 'text', 'content': {'tid': id, 'title': title, 'html': text}}))
 
 # tornado content handlers
 class Application(tornado.web.Application):
@@ -122,3 +129,4 @@ class Application(tornado.web.Application):
 application = Application()
 application.listen(args.port)
 tornado.ioloop.IOLoop.current().start()
+

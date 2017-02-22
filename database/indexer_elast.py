@@ -10,6 +10,28 @@ class Connection:
         self.es = Elasticsearch()
         self.index = index
 
+    def create(self, reset=False):
+        if reset:
+            try:
+                self.es.indices.delete(self.index)
+            except:
+                pass
+        try:
+            self.es.indices.create(self.index, body={
+                "mappings" : {
+                    doc_article : {
+                        "properties" : {
+                            "title" : {
+                                "type" : "string",
+                                "index" : "not_analyzed"
+                            }
+                        }
+                    }
+                }
+            })
+        except:
+            pass
+
     def insert(self, id, title, body):
         return self.es.index(index=self.index, doc_type=doc_article, id=id, body={
             'title': title,
@@ -26,14 +48,14 @@ class Connection:
         return self.es.get(index=self.index, doc_type=doc_article, id=id, _source=['title'])['_source']['title']
 
     def link(self, title):
-        ret = self.es.get(index=self.index, doc_type=doc_article, body={
+        ret = self.es.search(index=self.index, doc_type=doc_article, body={
             'query': {
                 'term': {'title': title}
             }
         }, _source=['id'])
         hits = ret['hits']
         if hits['total'] > 0:
-            return hits['hits'][0]
+            return hits['hits'][0]['_id']
         else:
             return None
 

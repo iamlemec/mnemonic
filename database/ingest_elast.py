@@ -13,6 +13,7 @@ parser = argparse.ArgumentParser(description='Nemonic Server.')
 parser.add_argument('wiki_fname', type=str, help='filename of wikipedia')
 parser.add_argument('--index', type=str, default='wikipedia', help='name of elasticsearch index')
 parser.add_argument('--limit', type=int, default=None, help='number of articles to parse')
+parser.add_argument('--reset', action='store_true', help='drop existing index')
 args = parser.parse_args()
 
 # tag ids
@@ -25,6 +26,7 @@ text_tag = namespace + 'text'
 
 # initialize/open database
 con = ix.Connection(index=args.index)
+con.create(reset=args.reset)
 
 # revert html codes
 hp = HTMLParser()
@@ -69,7 +71,6 @@ for (_,page) in etree.iterparse(args.wiki_fname, tag=page_tag, events=['end']):
 
     i += 1
     if i % 1000 == 0:
-        con.commit()
         print(i)
     if args.limit and i >= args.limit:
         break

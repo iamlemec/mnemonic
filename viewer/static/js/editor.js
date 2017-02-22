@@ -19,6 +19,37 @@ function send_command(cmd,cont) {
   }
 }
 
+function connectHandlers(box) {
+  box.click(function(event) {
+    $('.tb_box').removeClass('selected');
+    box.addClass('selected');
+    var tid = box.attr('tid');
+    send_command('text',tid);
+  });
+}
+
+function make_entry(info) {
+    var box = $('<div>',{class: 'tb_box', tid: info['tid'], title: info['title']});
+    var span = $('<span>',{class: 'tb_title', html: info['title']});
+    box.append(span);
+    connectHandlers(box);
+    return box;
+}
+
+function add_history(info) {
+    var found = false;
+    hist.find('.tb_box').each(function(i) {
+        var box = $(this);
+        if (box.attr('tid') == info['tid']) {
+            found = true;
+        }
+    });
+    if (!found) {
+        var box = make_entry(info);
+        hist.prepend(box);
+    }
+}
+
 function create_websocket(first_time) {
   ws = new WebSocket(ws_con);
 
@@ -42,10 +73,7 @@ function create_websocket(first_time) {
           results.empty();
         }
         $(cont['results']).each(function(i,bit) {
-          var box = $('<div>',{class: 'tb_box', tid: bit['tid']});
-          var span = $('<span>',{class: 'tb_title', html: bit['title']});
-          box.append(span);
-          connectHandlers(box);
+          var box = make_entry(bit);
           results.append(box);
         });
         if (cont['done']) {
@@ -54,13 +82,15 @@ function create_websocket(first_time) {
           results.removeClass('done');
         }
       } else if (cmd == 'text') {
-        output.html(cont);
+        console.log(cont['tid'],cont['title']);
+        output.html(cont['html']);
         output[0].scrollTop = 0;
         output.find('.wikilink').click(function(link) {
           link.preventDefault();
           var href = $(this).text();
           send_command('link',href);
         });
+        add_history(cont);
       }
     }
   };
@@ -94,19 +124,11 @@ function disconnect()
   }
 }
 
-function connectHandlers(box) {
-  box.click(function(event) {
-    $('.tb_box').removeClass('selected');
-    box.addClass('selected');
-    var tid = box.attr('tid');
-    send_command('text',tid);
-  });
-}
-
 $(document).ready(function () {
   results = $('#results');
   query = $('#query');
   output = $('#output');
+  hist = $('#history');
 
   connect();
 

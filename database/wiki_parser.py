@@ -64,7 +64,7 @@ class WikiParser:
             else:
                 return ''
         elif t is mw.nodes.Comment:
-            return self.parse_html(node.contents)
+            return ''
         elif t is mw.nodes.HTMLEntity:
             return node.normalize()
         elif t is mw.nodes.Text:
