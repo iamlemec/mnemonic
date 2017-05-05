@@ -23,31 +23,33 @@ function connectHandlers(box) {
   box.click(function(event) {
     $('.tb_box').removeClass('selected');
     box.addClass('selected');
-    var tid = box.attr('tid');
-    send_command('text',tid);
+    var file = box.attr('file');
+    send_command('text',file);
   });
 }
 
 function make_entry(info) {
-    var box = $('<div>',{class: 'tb_box', tid: info['tid'], title: info['title']});
-    var span = $('<span>',{class: 'tb_title', html: info['title']});
+    console.log(info);
+    var box = $('<div>',{class: 'res_box', file: info['file'], line: info['line']});
+    var span = $('<span>',{class: 'res_title', html: info['file'] + '[' + info['line'] + ']' + ': ' + info['text']});
     box.append(span);
     connectHandlers(box);
     return box;
 }
 
-function add_history(info) {
-    var found = false;
-    hist.find('.tb_box').each(function(i) {
-        var box = $(this);
-        if (box.attr('tid') == info['tid']) {
-            found = true;
-        }
-    });
-    if (!found) {
-        var box = make_entry(info);
-        hist.prepend(box);
-    }
+function make_output(info) {
+    var tags = info['tags'].map(function(s) { return '#' + s; }).join(' ');
+    var title = $('<span>',{class: 'out_title', html: info['title'], contentEditable: true});
+    var tags = $('<span>',{class: 'out_tags'});
+    $(info['tags']).each(function(i,s) { tags.append($('<span>',{class: 'out_tag', html: s})); });
+    var head = $('<div>',{class: 'out_head'});
+    head.append(title);
+    head.append(tags);
+    var body = $('<div>',{class: 'out_body', html: info['body'], contentEditable: true});
+    var box = $('<div>');
+    box.append(head);
+    box.append(body);
+    return box;
 }
 
 function create_websocket(first_time) {
@@ -62,17 +64,15 @@ function create_websocket(first_time) {
 
   ws.onmessage = function (evt) {
     var msg = evt.data;
-    // console.log('Received: ' + msg);
+    console.log('Received: ' + msg);
 
     var json_data = JSON.parse(msg);
     if (json_data) {
       var cmd = json_data['cmd'];
       var cont = json_data['content'];
       if (cmd == 'results') {
-        if (cont['reset']) {
-          results.empty();
-        }
-        $(cont['results']).each(function(i,bit) {
+        results.empty();
+        $(cont).each(function(i,bit) {
           var box = make_entry(bit);
           results.append(box);
         });
@@ -82,19 +82,40 @@ function create_websocket(first_time) {
           results.removeClass('done');
         }
       } else if (cmd == 'text') {
-        console.log(cont['tid'],cont['title']);
-        output.html(cont['html']);
+        console.log(cont['file']);
+        var box = make_output(cont);
+        console.log(box);
+        output.empty();
+        output.append(box);
         output[0].scrollTop = 0;
-        output.find('.wikilink').click(function(link) {
-          link.preventDefault();
-          var href = $(this).text();
-          send_command('link',href);
-        });
-        add_history(cont);
       }
     }
   };
 
+  ws.onclose = function() {
+    console.log('websocket closed, attempting to reconnect');
+    setTimeout(function() {
+      create_websocket(false);
+    }, 1);
+  };
+}
+
+function connect()
+{
+  if ('MozWebSocket' in window) {
+    WebSocket = MozWebSocket;
+  }
+  if ('WebSocket' in window) {
+    ws_con = 'ws://' + window.location.host + '/fuzzy';
+    console.log(ws_con);
+    create_websocket(true);
+  } else {
+    console.log('Sorry, your browser does not support websockets.');
+  }
+}
+
+function disconnect()
+{
   ws.onclose = function() {
     console.log('websocket closed, attempting to reconnect');
     setTimeout(function() {
@@ -131,6 +152,7 @@ $(document).ready(function () {
   hist = $('#history');
 
   connect();
+  query.focus();
 
   query.keypress(function(event) {
     if (event.keyCode == 13) {

@@ -5,6 +5,7 @@ import json
 import argparse
 import traceback
 import operator as op
+import subprocess as sub
 
 import tornado.ioloop
 import tornado.web
@@ -17,6 +18,17 @@ parser = argparse.ArgumentParser(description='Mnemonic Server.')
 parser.add_argument('--path', type=str, help='location of files')
 parser.add_argument('--port', type=int, default=9020, help='port to serve on')
 args = parser.parse_args()
+
+# searching
+def search(words):
+    query = '|'.join(words.split())
+    with sub.Popen(['ag', query, args.path], stdout=sub.PIPE) as proc:
+        outp, _ = proc.communicate()
+        for line in outp.decode().split('\n'):
+            if len(line) > 0:
+                fpath, line, text = line.split(':', maxsplit=2)
+                fname = os.path.basename(fpath)
+                yield {'file': fname, 'line': line, 'text': text}
 
 class EditorHandler(tornado.web.RequestHandler):
     def get(self):
@@ -43,6 +55,9 @@ class FuzzyHandler(tornado.websocket.WebSocketHandler):
         else:
             print("error code not found")
 
+    def write_json(self, js):
+        self.write_message(json.dumps(js))
+
     def on_message(self, msg):
         try:
             print(u'received message: {0}'.format(msg))
@@ -52,16 +67,33 @@ class FuzzyHandler(tornado.websocket.WebSocketHandler):
         (cmd, cont) = (data['cmd'], data['content'])
         if cmd == 'query':
             try:
-                print(cont)
+                print('Query: ' + cont)
+                ret = list(search(cont))
+                self.write_json({'cmd': 'results', 'content': ret})
             except Exception as e:
                 print(e)
-                print(traceddback.format_exc())
+                print(traceback.format_exc())
         elif cmd == 'text':
             try:
-                print(cont)
+                print('Text: ' + cont)
+                fpath = os.path.join(args.path, cont)
+                with open(fpath) as fid:
+                    text = fid.read()
+                    if text.startswith('!'):
+                        if '\n' not in text:
+                            text += '\n'
+                        head, body = text[1:].split('\n', maxsplit=1)
+                        head = head.split()
+                        title = ' '.join([s for s in head if not s.startswith('#')])
+                        tags = [s[1:] for s in head if s.startswith('#')]
+                    else:
+                        title = ''
+                        tags = []
+                    body = body.strip().replace('\n', '<br/>')
+                    self.write_json({'cmd': 'text', 'content': {'file': cont, 'title': title, 'tags': tags, 'body': body}})
             except Exception as e:
                 print(e)
-                print(traceddback.format_exc())
+                print(traceback.format_exc())
 
 # tornado content handlers
 class Application(tornado.web.Application):
