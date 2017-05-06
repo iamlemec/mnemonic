@@ -6,6 +6,7 @@ import argparse
 import traceback
 import operator as op
 import subprocess as sub
+import shutil
 
 import tornado.ioloop
 import tornado.web
@@ -18,6 +19,9 @@ parser = argparse.ArgumentParser(description='Mnemonic Server.')
 parser.add_argument('--path', type=str, help='location of files')
 parser.add_argument('--port', type=int, default=9020, help='port to serve on')
 args = parser.parse_args()
+
+# hardcoded
+tmp_dir = 'temp'
 
 # searching
 def search(words):
@@ -92,6 +96,22 @@ class FuzzyHandler(tornado.websocket.WebSocketHandler):
                     body = body.strip().replace('\n', '<br/>')
                     self.write_json({'cmd': 'text', 'content': {'file': cont, 'title': title, 'tags': tags, 'body': body}})
             except Exception as e:
+                print(e)
+                print(traceback.format_exc())
+        elif cmd == 'save':
+            try:
+                tags = ' '.join(['#' + t for t in cont['tags']])
+                text = '!' + cont['title'] + ' ' + tags + '\n\n' + cont['body']
+
+                fname = cont['file']
+                tpath = os.path.join(tmp_dir, fname)
+                fpath = os.path.join(args.path, fname)
+
+                fid = open(tpath, 'w+')
+                fid.write(text)
+                fid.close()
+                shutil.move(tpath, fpath)
+            except:
                 print(e)
                 print(traceback.format_exc())
 
