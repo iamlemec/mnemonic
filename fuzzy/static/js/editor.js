@@ -171,20 +171,31 @@ $(document).ready(function () {
         }
     });
 
-    output.attr('modified', 'true');
     output.keypress(function(event) {
         if ((event.keyCode == 13) && event.shiftKey) {
-            if (output.attr('modified') == 'true') {
+            if (output.hasClass('modified')) {
                 save_output();
             }
             event.preventDefault();
         } else if ((event.keyCode == 13) && event.metaKey) {
             new_tag(box);
         } else if (event.keyCode == 27) {
-            if (output.attr('modified') == 'true') {
+            if (output.hasClass('modified')) {
                 revert_box(box);
             }
         }
+    });
+
+    title.keydown(function(event) {
+        if (event.keyCode == 13) {
+            if (!event.shiftKey) {
+                event.preventDefault();
+            }
+        }
+    });
+
+    output.bind('input', function() {
+        output.addClass('modified');
     });
 
     $(document).unbind('keydown').bind('keydown',function() {
