@@ -83,16 +83,12 @@ class FuzzyHandler(tornado.websocket.WebSocketHandler):
                 fpath = os.path.join(args.path, cont)
                 with open(fpath) as fid:
                     text = fid.read()
-                    if text.startswith('!'):
-                        if '\n' not in text:
-                            text += '\n'
-                        head, body = text[1:].split('\n', maxsplit=1)
-                        head = head.split()
-                        title = ' '.join([s for s in head if not s.startswith('#')])
-                        tags = [s[1:] for s in head if s.startswith('#')]
-                    else:
-                        title = ''
-                        tags = []
+                    if '\n' not in text:
+                        text += '\n'
+                    head, body = text[1:].split('\n', maxsplit=1)
+                    head = head.split()
+                    title = ' '.join([s for s in head if not s.startswith('#')])
+                    tags = [s[1:] for s in head if s.startswith('#')]
                     body = body.strip().replace('\n', '<br/>')
                     self.write_json({'cmd': 'text', 'content': {'file': cont, 'title': title, 'tags': tags, 'body': body}})
             except Exception as e:

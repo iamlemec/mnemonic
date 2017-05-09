@@ -13,8 +13,10 @@ def parse_block(block):
 
     tags = re.findall(r'\[\[([^\]]+)\]\]', block.get('tags', ''))
 
-    text = block.pre.text
-    text = re.sub(r'\*+', lambda x: tab*(len(x.group())-1)+'-', text) # for lists
+    text = block.pre.text.rstrip() + '\n\n'
+    text = re.sub(r'^([^\*\n][^\n]*)\n\*', r'\1\n\n*', text, flags=re.MULTILINE) # linebreak lists
+    text = re.sub(r'^\*+', lambda x: tab*(len(x.group())-1)+'-', text, flags=re.MULTILINE) # for lists
+    text = re.sub(r'^(!+) ?', lambda x: '#'*(len(x.groups()[0])+1)+' ', text, flags=re.MULTILINE) # for headings
 
     return {
         'title': title,
@@ -34,9 +36,9 @@ def format_block(info, tags=[]):
     title = normalize(info['title'])
 
     body = ''
-    body += '!' + info['title'] + '\n'
+    body += info['title'] + '\n'
     body += '\n'
-    body += ' '.join(['#' + normalize(x) for x in info['tags'] + tags]) + '\n'
+    body += ' '.join(['@' + normalize(x) for x in info['tags'] + tags]) + '\n'
     body += '\n'
     body += info['text']
 
@@ -44,7 +46,7 @@ def format_block(info, tags=[]):
 
 def store_block(info, dname, tags=[]):
     title, body = format_block(info, tags=tags)
-    fpath = os.path.join(dname, title)
+    fpath = os.path.join(dname, title + '.txt')
     with open(fpath, 'w+') as fout:
         fout.write(body)
 
