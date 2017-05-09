@@ -111,7 +111,7 @@ class FuzzyHandler(tornado.websocket.WebSocketHandler):
                 fid.write(text)
                 fid.close()
                 shutil.move(tpath, fpath)
-            except:
+            except Exception as e:
                 print(e)
                 print(traceback.format_exc())
 

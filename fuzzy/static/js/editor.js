@@ -30,10 +30,13 @@ function send_command(cmd,cont) {
 
 function connectHandlers(box) {
     box.click(function(event) {
-        $('.tb_box').removeClass('selected');
+        $('.res_box').removeClass('selected');
         box.addClass('selected');
-        var file = box.attr('file');
-        send_command('text',file);
+        var newfile = box.attr('file');
+        if (newfile == file) {
+            return;
+        }
+        send_command('text', newfile);
     });
 }
 
@@ -86,6 +89,7 @@ function create_websocket(first_time) {
             } else if (cmd == 'text') {
                 render_output(cont);
                 file = cont['file'];
+                output.removeClass('modified');
                 output[0].scrollTop = 0;
             }
         }
@@ -149,6 +153,7 @@ function save_output(box) {
     var tag = tags.find('.out_tag').map(function(i, t) { return t.innerHTML; } ).toArray();
     var bod = strip_tags(body.html());
     send_command('save', {'file': file, 'title': tit, 'tags': tag, 'body': bod});
+    output.removeClass('modified');
 }
 
 $(document).ready(function () {
@@ -159,6 +164,8 @@ $(document).ready(function () {
     body = $('#body');
     title = $('#title');
     tags = $('#tags');
+
+    file = null;
 
     connect();
     query.focus();

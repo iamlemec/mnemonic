@@ -72,6 +72,7 @@ body {
 
 
 #head {
+  position: relative;
   margin-bottom: 20px;
 }
 
@@ -101,7 +102,6 @@ body {
 
 .res_box {
   position: relative;
-  /*border-bottom: 1px solid #939496;*/
   width: 100%;
   padding: 5px;
 }
@@ -131,6 +131,21 @@ body {
   margin-right: 3px;
   padding-left: 3px;
   padding-right: 3px;
+}
+
+#mod_box {
+  visibility: hidden;
+  background-color: red;
+  border-radius: 3px;
+  position: absolute;
+  left: -16px;
+  top: 6px;
+  height: 11px;
+  width: 11px;
+}
+
+#output.modified #mod_box {
+  visibility: visible;
 }
 
 /* theme */
