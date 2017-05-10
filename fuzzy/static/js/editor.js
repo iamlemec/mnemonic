@@ -18,6 +18,16 @@ function strip_tags(html) {
                .replace(/<\/span>/g, '');
 };
 
+function set_caret_at_end(element) {
+  element.focus();
+  var range = document.createRange();
+  range.selectNodeContents(element);
+  range.collapse(false);
+  var sel = window.getSelection();
+  sel.removeAllRanges();
+  sel.addRange(range);
+}
+
 function send_command(cmd,cont) {
     try {
         var msg = JSON.stringify({'cmd': cmd, 'content': cont});
@@ -42,20 +52,30 @@ function connectHandlers(box) {
 
 function render_entry(info) {
     console.log(info);
-    var box = $('<div>',{class: 'res_box', file: info['file'], line: info['line']});
-    var span = $('<span>',{class: 'res_title', html: info['file'] + '[' + info['line'] + ']' + ': ' + info['text']});
+    var box = $('<div>', {class: 'res_box', file: info['file'], line: info['line']});
+    var span = $('<span>', {class: 'res_title', html: info['file'] + '[' + info['line'] + ']' + ': ' + info['text']});
     box.append(span);
     connectHandlers(box);
     return box;
 }
 
 function render_tag(label) {
-    return $('<span>',{class: 'out_tag', html: label});
+    var lab = $('<span>', {class: 'tag_lab', html: label});
+    var del = $('<span>', {class: 'tag_del', html: '&#x2716;'});
+    var tag = $('<span>', {class: 'tag_box'});
+    tag.append(lab);
+    tag.append(del);
+    del.click(function(event) {
+        tag.remove();
+        output.addClass('modified');
+        output.focus();
+    });
+    return tag;
 }
 
 function render_results(res) {
     results.empty();
-    $(res).each(function(i,bit) {
+    $(res).each(function(i, bit) {
         var box = render_entry(bit);
         results.append(box);
     });
@@ -66,6 +86,24 @@ function render_output(info) {
     tags.empty();
     $(info['tags']).each(function(i,s) { tags.append(render_tag(s)); });
     body.html(info['body']);
+}
+
+
+function create_tag(box) {
+    var tag = render_tag('');
+    tags.append(tag);
+    output.addClass('modified');
+    var lab = tag.children(".tag_lab");
+    var del = tag.children(".tag_del");
+    lab.attr('contentEditable', 'true');
+    set_caret_at_end(lab[0]);
+    lab.keydown(function(event) {
+        if (event.keyCode == 13) {
+            lab.attr('contentEditable', 'false');
+            body.focus();
+            event.preventDefault();
+        }
+    });
 }
 
 function create_websocket(first_time) {
@@ -150,7 +188,7 @@ function disconnect()
 
 function save_output(box) {
     var tit = title.text();
-    var tag = tags.find('.out_tag').map(function(i, t) { return t.innerHTML; } ).toArray();
+    var tag = tags.find('.tag_lab').map(function(i, t) { return t.innerHTML; } ).toArray();
     var bod = strip_tags(body.html());
     send_command('save', {'file': file, 'title': tit, 'tags': tag, 'body': bod});
     output.removeClass('modified');
@@ -179,16 +217,17 @@ $(document).ready(function () {
     });
 
     output.keypress(function(event) {
+        console.log(event.keyCode, event.metaKey);
         if ((event.keyCode == 13) && event.shiftKey) {
             if (output.hasClass('modified')) {
                 save_output();
             }
             event.preventDefault();
-        } else if ((event.keyCode == 13) && event.metaKey) {
-            new_tag(box);
+        } else if ((event.keyCode == 10) && event.metaKey) {
+            create_tag();
         } else if (event.keyCode == 27) {
             if (output.hasClass('modified')) {
-                revert_box(box);
+                revert();
             }
         }
     });

@@ -17,6 +17,9 @@ def parse_block(block):
     text = re.sub(r'^([^\*\n][^\n]*)\n\*', r'\1\n\n*', text, flags=re.MULTILINE) # linebreak lists
     text = re.sub(r'^\*+', lambda x: tab*(len(x.group())-1)+'-', text, flags=re.MULTILINE) # for lists
     text = re.sub(r'^(!+) ?', lambda x: '#'*(len(x.groups()[0])+1)+' ', text, flags=re.MULTILINE) # for headings
+    text = re.sub(r'^> ?', '## ', text, flags=re.MULTILINE) # big headings
+    text = re.sub(r'(\A|\W)//([^/\n]+)//(\Z|\W)', r'\1*\2*\3', text) # italics
+    text = re.sub(r'(\A|\W)\'([^\'\n]+)\'(\Z|\W)', r'\1**\2**\3', text) # bold
 
     return {
         'title': title,
