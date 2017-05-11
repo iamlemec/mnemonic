@@ -130,7 +130,7 @@ body {
 
 .tag_box {
     cursor: default;
-    margin-right: 0px;
+    margin-right: 3px;
     margin-left: 0px;
     color: white;
     white-space: nowrap;
@@ -176,8 +176,8 @@ body {
     top: 6px;
     height: 17px;
     width: 17px;
-    font-size: 14px;
-    padding-left: 3px;
+    font-size: 13px;
+    padding-left: 0px;
     font-weight: bold;
 }
 

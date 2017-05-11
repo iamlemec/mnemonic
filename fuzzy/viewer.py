@@ -22,13 +22,12 @@ args = parser.parse_args()
 
 # hardcoded
 tmp_dir = 'temp'
+max_len = 90
+max_res = 100
 
 # searching
 def search(words):
-    words = words.split()
-    first = 'ag "%s" "%s"' % (words.pop(), args.path)
-    rest = ['ag "%s"' % w for w in words]
-    query = ' | '.join([first]+rest)
+    query = 'ag --nobreak --noheading ".+" "%s" | fzf -f "%s" | head -n %d' % (args.path, words, max_res)
     with sub.Popen(query, shell=True, stdout=sub.PIPE) as proc:
         outp, _ = proc.communicate()
         print(outp)
@@ -36,6 +35,8 @@ def search(words):
             if len(line) > 0:
                 fpath, line, text = line.split(':', maxsplit=2)
                 fname = os.path.basename(fpath)
+                if len(text) > max_len - 3:
+                    text = text[:max_len-3] + '...'
                 yield {'file': fname, 'line': line, 'text': text}
 
 class EditorHandler(tornado.web.RequestHandler):

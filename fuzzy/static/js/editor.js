@@ -19,13 +19,13 @@ function strip_tags(html) {
 };
 
 function set_caret_at_end(element) {
-  element.focus();
-  var range = document.createRange();
-  range.selectNodeContents(element);
-  range.collapse(false);
-  var sel = window.getSelection();
-  sel.removeAllRanges();
-  sel.addRange(range);
+    element.focus();
+    var range = document.createRange();
+    range.selectNodeContents(element);
+    range.collapse(false);
+    var sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
 }
 
 function send_command(cmd,cont) {
@@ -38,25 +38,25 @@ function send_command(cmd,cont) {
     }
 }
 
+function select_entry(box) {
+    $('.res_box').removeClass('selected');
+    box.addClass('selected');
+    var newfile = box.attr('file');
+    if (newfile == file) {
+        return;
+    }
+    send_command('text', newfile);
+}
+
 function connectHandlers(box) {
     box.click(function(event) {
-        $('.res_box').removeClass('selected');
-        box.addClass('selected');
-        var newfile = box.attr('file');
-        if (newfile == file) {
-            return;
-        }
-        send_command('text', newfile);
+        select_entry(box);
     });
 }
 
-maxlen = 100;
 function render_entry(info) {
     var name = '<span class="res_name">' + info['file'] + ' - ' + info['line'] + '</span>';
     var text = info['text'];
-    if (text.length > maxlen) {
-        text = text.substr(0, maxlen-3) + '...';
-    }
     var box = $('<div>', {class: 'res_box', file: info['file'], line: info['line']});
     var span = $('<span>', {class: 'res_title', html: name + '<br/>' + text});
     box.append(span);
@@ -91,7 +91,7 @@ function render_output(info) {
     tags.empty();
     $(info['tags']).each(function(i,s) {
         tags.append(render_tag(s));
-        tags.append('&nbsp; ');
+        tags.append(' ');
     });
     body.html(info['body']);
 }
@@ -100,6 +100,7 @@ function render_output(info) {
 function create_tag(box) {
     var tag = render_tag('');
     tags.append(tag);
+    tags.append(' ');
     output.addClass('modified');
     var lab = tag.children(".tag_lab");
     var del = tag.children(".tag_del");
