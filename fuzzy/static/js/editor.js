@@ -50,10 +50,15 @@ function connectHandlers(box) {
     });
 }
 
+maxlen = 100;
 function render_entry(info) {
-    console.log(info);
+    var name = '<span class="res_name">' + info['file'] + ' - ' + info['line'] + '</span>';
+    var text = info['text'];
+    if (text.length > maxlen) {
+        text = text.substr(0, maxlen-3) + '...';
+    }
     var box = $('<div>', {class: 'res_box', file: info['file'], line: info['line']});
-    var span = $('<span>', {class: 'res_title', html: info['file'] + '[' + info['line'] + ']' + ': ' + info['text']});
+    var span = $('<span>', {class: 'res_title', html: name + '<br/>' + text});
     box.append(span);
     connectHandlers(box);
     return box;
@@ -84,7 +89,10 @@ function render_results(res) {
 function render_output(info) {
     title.html(info['title']);
     tags.empty();
-    $(info['tags']).each(function(i,s) { tags.append(render_tag(s)); });
+    $(info['tags']).each(function(i,s) {
+        tags.append(render_tag(s));
+        tags.append('&nbsp; ');
+    });
     body.html(info['body']);
 }
 
@@ -190,6 +198,9 @@ function save_output(box) {
     var tit = title.text();
     var tag = tags.find('.tag_lab').map(function(i, t) { return t.innerHTML; } ).toArray();
     var bod = strip_tags(body.html());
+    if (file == null) {
+        file = tit.toLowerCase().replace(/\W/g, '_');
+    }
     send_command('save', {'file': file, 'title': tit, 'tags': tag, 'body': bod});
     output.removeClass('modified');
 }
@@ -202,6 +213,7 @@ $(document).ready(function () {
     body = $('#body');
     title = $('#title');
     tags = $('#tags');
+    newdoc = $('#newdoc');
 
     file = null;
 
@@ -216,8 +228,16 @@ $(document).ready(function () {
         }
     });
 
+    newdoc.click(function(event) {
+        file = null;
+        render_output({
+            'title': 'Title',
+            'tags': [],
+            'body': ''
+        });
+    });
+
     output.keypress(function(event) {
-        console.log(event.keyCode, event.metaKey);
         if ((event.keyCode == 13) && event.shiftKey) {
             if (output.hasClass('modified')) {
                 save_output();

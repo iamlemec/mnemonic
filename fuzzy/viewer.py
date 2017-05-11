@@ -25,9 +25,13 @@ tmp_dir = 'temp'
 
 # searching
 def search(words):
-    query = '|'.join(words.split())
-    with sub.Popen(['ag', query, args.path], stdout=sub.PIPE) as proc:
+    words = words.split()
+    first = 'ag "%s" "%s"' % (words.pop(), args.path)
+    rest = ['ag "%s"' % w for w in words]
+    query = ' | '.join([first]+rest)
+    with sub.Popen(query, shell=True, stdout=sub.PIPE) as proc:
         outp, _ = proc.communicate()
+        print(outp)
         for line in outp.decode().split('\n'):
             if len(line) > 0:
                 fpath, line, text = line.split(':', maxsplit=2)

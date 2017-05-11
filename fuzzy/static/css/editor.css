@@ -21,24 +21,25 @@ body {
     color: #E7F3FD;
 }
 
-#marquis {
-    color: #9baaa0;
-    font-size: 40px;
-    text-align: center;
-    margin-top: 30px;
-    margin-bottom: 20px;
-}
-
 #outer {
     margin: auto;
-    width: 900px;
+    margin-top: 100px;
+    width: 910px;
+    height: 585px;
+    border: 2px solid #717c75;
+    border-radius: 3px;
+}
+
+#inner {
+    height: 573px;
+    margin: 4px;
+    border: 1px solid #2f3c35;
+    border-radius: 1px;
 }
 
 #search {
     float: left;
     width: 40%;
-    border: 1px solid #9baaa0;
-    border-right: 0px;
     background: #070908;
 }
 
@@ -48,8 +49,7 @@ body {
     padding: 5px;
     height: 30px;
     border: 0px;
-    border-bottom: 1px solid #9baaa0;
-    background: #313437;
+    background: #2f3c35; /*#313437*/
     color: #E7F3FD;
 }
 
@@ -61,19 +61,19 @@ body {
 #output {
     float: left;
     width: 60%;
-    border: 1px solid #9baaa0;
+    border-left: 1px solid #2f3c35;
     background: #070908;
     height: 571px;
     overflow-y: scroll;
     margin: 0px 0px 0px 0px;
     padding: 40px 40px 40px 40px;
-    text-align: justify;
 }
 
 
 #head {
     position: relative;
     margin-bottom: 20px;
+    line-height: 1.5;
 }
 
 #body {
@@ -86,7 +86,7 @@ body {
 }
 
 #tags {
-    /*margin-left: 5px;*/
+    margin-left: 3px;
 }
 
 #results::-webkit-scrollbar {
@@ -98,6 +98,7 @@ body {
 }
 
 #navbar {
+    position: relative;
 }
 
 .res_box {
@@ -111,7 +112,7 @@ body {
 }
 
 .res_box.selected {
-    background-color: #4284F2;
+    background-color: #717c75; /*#4284F2*/
     color: white;
 }
 
@@ -122,10 +123,15 @@ body {
     width: 100%;
 }
 
+.res_name {
+    padding-right: 3px;
+    font-weight: bold;
+}
+
 .tag_box {
     cursor: default;
-    margin-right: 3px;
-    margin-left: 3px;
+    margin-right: 0px;
+    margin-left: 0px;
     color: white;
     white-space: nowrap;
 }
@@ -159,6 +165,20 @@ body {
     top: 6px;
     height: 11px;
     width: 11px;
+}
+
+#newdoc {
+    cursor: default;
+    background-color: #4284F2;
+    border-radius: 3px;
+    position: absolute;
+    right: 7px;
+    top: 6px;
+    height: 17px;
+    width: 17px;
+    font-size: 14px;
+    padding-left: 3px;
+    font-weight: bold;
 }
 
 #output.modified #mod_box {
