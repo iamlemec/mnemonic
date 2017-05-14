@@ -23,7 +23,7 @@ body {
 
 #outer {
     margin: auto;
-    margin-top: 100px;
+    margin-top: 50px;
     width: 910px;
     height: 585px;
     border: 2px solid #717c75;
@@ -176,8 +176,8 @@ body {
     top: 6px;
     height: 17px;
     width: 17px;
-    font-size: 13px;
-    padding-left: 0px;
+    font-size: 15px;
+    padding-left: 2px;
     font-weight: bold;
 }
 
