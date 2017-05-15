@@ -239,12 +239,15 @@ $(document).ready(function () {
     });
 
     output.keypress(function(event) {
-        if ((event.keyCode == 13) && event.shiftKey) {
+        console.log(event.keyCode);
+        console.log(event.metaKey);
+        console.log(event.shiftKey);
+        if (((event.keyCode == 10) || (event.keyCode == 13)) && event.shiftKey) {
             if (output.hasClass('modified')) {
                 save_output();
             }
             event.preventDefault();
-        } else if ((event.keyCode == 10) && event.metaKey) {
+        } else if (((event.keyCode == 10) || (event.keyCode == 13)) && event.metaKey) {
             create_tag();
         } else if (event.keyCode == 27) {
             if (output.hasClass('modified')) {
