@@ -24,6 +24,7 @@ body {
 #outer {
     margin: auto;
     margin-top: 50px;
+    padding: 4px;
     width: 910px;
     height: 585px;
     border: 2px solid #717c75;
@@ -31,16 +32,22 @@ body {
 }
 
 #inner {
-    height: 573px;
-    margin: 4px;
     border: 1px solid #2f3c35;
     border-radius: 1px;
+    height: 100%;
 }
 
-#search {
+#left {
     float: left;
+    height: 100%;
     width: 40%;
     background: #070908;
+    display: flex;
+    flex-direction: column;
+}
+
+#navbar {
+    position: relative;
 }
 
 #query {
@@ -54,30 +61,35 @@ body {
 }
 
 #results {
-    height: 539px;
+    flex: auto;
     overflow-y: scroll;
+}
+
+#right {
+    float: left;
+    width: 60%;
+    height: 100%;
+    position: relative;
+    border-left: 1px solid #2f3c35;
 }
 
 #output {
-    float: left;
-    width: 60%;
-    border-left: 1px solid #2f3c35;
+    display: flex;
+    flex-direction: column;
     background: #070908;
-    height: 571px;
     overflow-y: scroll;
-    margin: 0px 0px 0px 0px;
-    padding: 40px 40px 40px 40px;
+    margin: 0px;
+    padding: 40px;
+    height: 100%;
 }
 
-
 #head {
-    position: relative;
     margin-bottom: 20px;
     line-height: 1.5;
 }
 
 #body {
-    min-height: 445px;
+    flex: auto;
 }
 
 #title {
@@ -95,10 +107,6 @@ body {
 
 #output::-webkit-scrollbar {
     display: none;
-}
-
-#navbar {
-    position: relative;
 }
 
 .res_box {
@@ -156,15 +164,19 @@ body {
     font-size: 13px;
 }
 
-#mod_box {
+#modbox {
     visibility: hidden;
     background-color: red;
     border-radius: 3px;
     position: absolute;
-    left: -16px;
+    right: 6px;
     top: 6px;
-    height: 11px;
-    width: 11px;
+    height: 17px;
+    width: 17px;
+}
+
+#fuzzy.modified #modbox {
+    visibility: visible;
 }
 
 #newdoc {
@@ -179,10 +191,6 @@ body {
     font-size: 15px;
     padding-left: 2px;
     font-weight: bold;
-}
-
-#output.modified #mod_box {
-    visibility: visible;
 }
 
 /* theme */

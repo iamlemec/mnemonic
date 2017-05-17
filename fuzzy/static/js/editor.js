@@ -18,6 +18,10 @@ function strip_tags(html) {
                .replace(/<\/span>/g, '');
 };
 
+function scroll_top() {
+    output[0].scrollTop = 0;
+}
+
 function set_caret_at_end(element) {
     element.focus();
     var range = document.createRange();
@@ -48,6 +52,18 @@ function select_entry(box) {
     send_command('text', newfile);
 }
 
+function is_modified() {
+    return fuzzy.hasClass('modified');
+}
+
+function set_modified(mod) {
+    if (mod) {
+        fuzzy.addClass('modified');
+    } else {
+        fuzzy.removeClass('modified');
+    }
+}
+
 function connectHandlers(box) {
     box.click(function(event) {
         select_entry(box);
@@ -72,7 +88,7 @@ function render_tag(label) {
     tag.append(del);
     del.click(function(event) {
         tag.remove();
-        output.addClass('modified');
+        set_modified(true);
         output.focus();
     });
     return tag;
@@ -101,7 +117,7 @@ function create_tag(box) {
     var tag = render_tag('');
     tags.append(tag);
     tags.append(' ');
-    output.addClass('modified');
+    set_modified(true);
     var lab = tag.children(".tag_lab");
     var del = tag.children(".tag_del");
     lab.attr('contentEditable', 'true');
@@ -136,8 +152,8 @@ function create_websocket(first_time) {
             } else if (cmd == 'text') {
                 render_output(cont);
                 file = cont['file'];
-                output.removeClass('modified');
-                output[0].scrollTop = 0;
+                set_modified(false);
+                scroll_top();
             }
         }
     };
@@ -203,10 +219,11 @@ function save_output(box) {
         file = tit.toLowerCase().replace(/\W/g, '_');
     }
     send_command('save', {'file': file, 'title': tit, 'tags': tag, 'body': bod});
-    output.removeClass('modified');
+    set_modified(false);
 }
 
 $(document).ready(function () {
+    fuzzy = $('#fuzzy');
     results = $('#results');
     query = $('#query');
     output = $('#output');
@@ -243,14 +260,14 @@ $(document).ready(function () {
         console.log(event.metaKey);
         console.log(event.shiftKey);
         if (((event.keyCode == 10) || (event.keyCode == 13)) && event.shiftKey) {
-            if (output.hasClass('modified')) {
+            if (is_modified()) {
                 save_output();
             }
             event.preventDefault();
         } else if (((event.keyCode == 10) || (event.keyCode == 13)) && event.metaKey) {
             create_tag();
         } else if (event.keyCode == 27) {
-            if (output.hasClass('modified')) {
+            if (is_modified()) {
                 revert();
             }
         }
@@ -265,7 +282,7 @@ $(document).ready(function () {
     });
 
     output.bind('input', function() {
-        output.addClass('modified');
+        set_modified(true);
     });
 
     $(document).unbind('keydown').bind('keydown',function() {
