@@ -142,26 +142,26 @@ body {
     margin-left: 0px;
     color: white;
     white-space: nowrap;
+    background-color: #4284F2;
+    border-radius: 4px;
 }
 
 .tag_lab {
-    border-top-left-radius: 4px;
-    border-bottom-left-radius: 4px;
-    background-color: #4284F2;
     padding-left: 5px;
     padding-right: 3px;
     font-weight: bold;
 }
 
 .tag_del {
-    border-top-right-radius: 4px;
-    border-bottom-right-radius: 4px;
-    background-color: #4284F2;
     color: #e8325a;
     padding-left: 3px;
     padding-right: 5px;
     padding-top: 3px;
     font-size: 13px;
+}
+
+.tag_box.selected {
+    background-color: blue;
 }
 
 #modbox {
@@ -191,6 +191,13 @@ body {
     font-size: 15px;
     padding-left: 2px;
     font-weight: bold;
+}
+
+/* body language */
+
+#body > div {
+    font-size: 16px;
+    min-height: 18px;
 }
 
 /* theme */
