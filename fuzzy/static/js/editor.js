@@ -32,6 +32,15 @@ function set_caret_at_end(element) {
     sel.addRange(range);
 }
 
+function select_all(element) {
+    element.focus();
+    var range = document.createRange();
+    range.selectNodeContents(element);
+    var sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+}
+
 function send_command(cmd,cont) {
     try {
         var msg = JSON.stringify({'cmd': cmd, 'content': cont});
@@ -126,8 +135,13 @@ function create_tag(box) {
         if (event.keyCode == 13) {
             lab.attr('contentEditable', 'false');
             body.focus();
-            event.preventDefault();
+            if (!event.metaKey) {
+                event.preventDefault();
+            }
         }
+    });
+    lab.focusout(function() {
+        lab.attr('contentEditable', 'false');
     });
 }
 
@@ -253,23 +267,20 @@ $(document).ready(function () {
             'tags': [],
             'body': ''
         });
+        select_all(title[0]);
     });
 
     output.keypress(function(event) {
         console.log(event.keyCode);
         console.log(event.metaKey);
         console.log(event.shiftKey);
-        if (((event.keyCode == 10) || (event.keyCode == 13)) && event.shiftKey) {
+        if (((event.keyCode == 10) || (event.keyCode == 13)) && event.shiftKey) { // shift + return
             if (is_modified()) {
                 save_output();
             }
             event.preventDefault();
-        } else if (((event.keyCode == 10) || (event.keyCode == 13)) && event.metaKey) {
+        } else if (((event.keyCode == 10) || (event.keyCode == 13)) && event.metaKey) { // control + return
             create_tag();
-        } else if (event.keyCode == 27) {
-            if (is_modified()) {
-                revert();
-            }
         }
     });
 
