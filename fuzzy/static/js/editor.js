@@ -11,15 +11,47 @@ Array.prototype.contains = function(obj) {
 
 // escaping
 function strip_tags(html) {
-    return html.replace(/<div ?.*?>/g, '')
-               .replace(/<\/div>/g, '\n')
-               .replace(/<br>/g, '\n')
+    return html.replace(/\n/g, '')
+               .replace(/<div ?.*?>/g, '')
+               .replace(/<br>/g, '')
                .replace(/<span ?.*?>/g, '')
-               .replace(/<\/span>/g, '');
+               .replace(/<\/span>/g, '')
+               .replace(/<\/div>/g, '\n');
 };
+
+function is_editable(element) {
+    return (event.target.getAttribute('contentEditable') || (event.target.tagName.toLowerCase() == 'input'));
+}
 
 function scroll_top() {
     output[0].scrollTop = 0;
+}
+
+// scroll cell into view
+var scrollSpeed = 100;
+var scrollFudge = 100;
+function ensure_visible(element) {
+    var res_top = results.offset().top;
+    var cell_top = results.scrollTop() + element.offset().top;
+    var cell_bot = cell_top + element.height();
+    var page_top = results.scrollTop() + res_top;
+    var page_bot = page_top + results.innerHeight();
+    if (cell_top < page_top + 20) {
+        results.stop();
+        results.animate({scrollTop: cell_top - res_top - scrollFudge}, scrollSpeed);
+    } else if (cell_bot > page_bot - 20) {
+        results.stop();
+        results.animate({scrollTop: cell_bot - res_top - results.innerHeight() + scrollFudge}, scrollSpeed);
+    }
+}
+
+function set_caret_at_beg(element) {
+    var range = document.createRange();
+    range.setStart(element, 0);
+    range.collapse(false);
+    var sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
 }
 
 function set_caret_at_end(element) {
@@ -41,19 +73,58 @@ function select_all(element) {
     sel.addRange(range);
 }
 
-function send_command(cmd,cont) {
-    try {
-        var msg = JSON.stringify({'cmd': cmd, 'content': cont});
-        ws.send(msg);
-        console.log('Sent: ' + msg);
-    } catch (exception) {
-        console.log('Error (' + msg + '):' + exception);
+function set_caret_at_pos(element, pos) {
+    var range = document.createRange();
+    range.setStart(element, pos);
+    range.setEnd(element, pos);
+    var sel = document.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+}
+
+function select_all(element) {
+    var selection = window.getSelection();
+    var range = document.createRange();
+    range.selectNodeContents(element);
+    selection.removeAllRanges();
+    selection.addRange(range);
+}
+
+function get_caret_position(element) {
+    sel = window.getSelection();
+    if (sel.rangeCount > 0) {
+        var range = window.getSelection().getRangeAt(0);
+        var preCaretRange = range.cloneRange();
+        preCaretRange.selectNodeContents(element);
+        preCaretRange.setEnd(range.endContainer, range.endOffset);
+        caretOffset = preCaretRange.toString().length;
+        return caretOffset;
+    } else {
+        return 0;
     }
+}
+
+function is_caret_at_beg(element) {
+    var cpos = get_caret_position(element);
+    return (cpos == 0);
+}
+
+function is_caret_at_end(element) {
+    var cpos = get_caret_position(element);
+    var tlen = element.textContent.length;
+    return (cpos == tlen);
+}
+
+function send_command(cmd, cont) {
+    var msg = JSON.stringify({'cmd': cmd, 'content': cont});
+    ws.send(msg);
+    console.log('Sent: ' + cmd);
 }
 
 function select_entry(box) {
     $('.res_box').removeClass('selected');
     box.addClass('selected');
+    ensure_visible(box);
     var newfile = box.attr('file');
     if (newfile == file) {
         return;
@@ -73,10 +144,12 @@ function set_modified(mod) {
     }
 }
 
-function connectHandlers(box) {
-    box.click(function(event) {
-        select_entry(box);
-    });
+function ensure_active() {
+    if (!active) {
+        title.attr('contentEditable', true);
+        body.attr('contentEditable', true);
+        active = true;
+    }
 }
 
 function render_entry(info) {
@@ -85,7 +158,9 @@ function render_entry(info) {
     var box = $('<div>', {class: 'res_box', file: info['file'], line: info['line']});
     var span = $('<span>', {class: 'res_title', html: name + '<br/>' + text});
     box.append(span);
-    connectHandlers(box);
+    box.click(function(event) {
+        select_entry(box);
+    });
     return box;
 }
 
@@ -98,7 +173,7 @@ function render_tag(label) {
     del.click(function(event) {
         tag.remove();
         set_modified(true);
-        output.focus();
+        body.focus();
     });
     return tag;
 }
@@ -112,13 +187,17 @@ function render_results(res) {
 }
 
 function render_output(info) {
+    ensure_active();
     title.html(info['title']);
     tags.empty();
-    $(info['tags']).each(function(i,s) {
+    $(info['tags']).each(function(i, s) {
         tags.append(render_tag(s));
         tags.append(' ');
     });
-    body.html(info['body']);
+    body.empty();
+    $(info['body'].split('\n')).each(function(i, s) {
+        body.append($('<div>', {text: s}));
+    });
 }
 
 
@@ -154,7 +233,7 @@ function create_websocket(first_time) {
 
     ws.onmessage = function (evt) {
         var msg = evt.data;
-        console.log('Received: ' + msg);
+        // console.log('Received: ' + msg);
 
         var json_data = JSON.parse(msg);
         if (json_data) {
@@ -229,6 +308,9 @@ function save_output(box) {
     var tit = title.text();
     var tag = tags.find('.tag_lab').map(function(i, t) { return t.innerHTML; } ).toArray();
     var bod = strip_tags(body.html());
+    if (bod.endsWith('\n')) {
+        bod = bod.slice(0, -1);
+    }
     if (file == null) {
         file = tit.toLowerCase().replace(/\W/g, '_');
     }
@@ -247,7 +329,9 @@ $(document).ready(function () {
     tags = $('#tags');
     newdoc = $('#newdoc');
 
+    // global states
     file = null;
+    active = false;
 
     connect();
     query.focus();
@@ -262,6 +346,7 @@ $(document).ready(function () {
 
     newdoc.click(function(event) {
         file = null;
+        ensure_active();
         render_output({
             'title': 'Title',
             'tags': [],
@@ -271,24 +356,42 @@ $(document).ready(function () {
     });
 
     output.keypress(function(event) {
-        console.log(event.keyCode);
-        console.log(event.metaKey);
-        console.log(event.shiftKey);
         if (((event.keyCode == 10) || (event.keyCode == 13)) && event.shiftKey) { // shift + return
             if (is_modified()) {
                 save_output();
             }
             event.preventDefault();
         } else if (((event.keyCode == 10) || (event.keyCode == 13)) && event.metaKey) { // control + return
-            create_tag();
+            if (active) {
+                create_tag();
+            }
+        } else if (event.keyCode == 27) {
+            if (is_modified()) {
+                revert();
+            }
         }
     });
 
     title.keydown(function(event) {
         if (event.keyCode == 13) {
-            if (!event.shiftKey) {
+            if (!event.shiftKey && !event.metaKey) {
                 event.preventDefault();
             }
+        } else if ((event.keyCode == 40) || ((event.keyCode == 39) && is_caret_at_end(title[0]))) {
+            set_caret_at_beg(body[0]);
+            event.preventDefault();
+        }
+    });
+
+    body.keydown(function(event) {
+        if ((event.keyCode == 37) && is_caret_at_beg(body[0])) {
+            set_caret_at_end(title[0]);
+            output[0].scrollTop = 0;
+            event.preventDefault();
+        } else if ((event.keyCode == 38) && is_caret_at_beg(body[0])) {
+            set_caret_at_beg(title[0]);
+            output[0].scrollTop = 0;
+            event.preventDefault();
         }
     });
 
@@ -296,10 +399,38 @@ $(document).ready(function () {
         set_modified(true);
     });
 
-    $(document).unbind('keydown').bind('keydown',function() {
+    $(document).unbind('keydown').bind('keydown', function(event) {
         if (event.keyCode == 8) {
-            if (!event.target.getAttribute('contentEditable') && (event.target.tagName.toLowerCase() != 'input')) {
-                console.log('rejecting backspace: ',event.target.tagName);
+            if (!is_editable(event.target)) {
+                console.log('rejecting editing key: ', event.target.tagName.toLowerCase());
+                event.preventDefault();
+            }
+        } else if (event.keyCode == 9) {
+            if (event.target.getAttribute('contentEditable')) {
+                query.focus();
+                event.preventDefault();
+            }
+        }
+        if ((event.keyCode == 38) || (event.keyCode == 40)) {
+            if (!event.target.getAttribute('contentEditable')) {
+                var box = $('.res_box.selected');
+                var other;
+                if (event.keyCode == 40) { // down
+                    if (box.length == 0) {
+                        other = $('.res_box:first-child');
+                    } else {
+                        other = box.next();
+                    }
+                } else { // up
+                    if (box.length == 0) {
+                        return;
+                    } else {
+                        other = box.prev();
+                    }
+                }
+                if (other.length > 0) {
+                    select_entry(other);
+                }
                 event.preventDefault();
             }
         }
