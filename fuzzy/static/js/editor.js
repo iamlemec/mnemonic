@@ -82,14 +82,6 @@ function set_caret_at_pos(element, pos) {
     sel.addRange(range);
 }
 
-function select_all(element) {
-    var selection = window.getSelection();
-    var range = document.createRange();
-    range.selectNodeContents(element);
-    selection.removeAllRanges();
-    selection.addRange(range);
-}
-
 function get_caret_position(element) {
     sel = window.getSelection();
     if (sel.rangeCount > 0) {
@@ -338,7 +330,7 @@ $(document).ready(function () {
 
     query.keypress(function(event) {
         if (event.keyCode == 13) {
-            var text = query.attr('value');
+            var text = query.val();
             send_command('query', text);
             event.preventDefault();
         }
@@ -346,9 +338,9 @@ $(document).ready(function () {
 
     newdoc.click(function(event) {
         file = null;
-        ensure_active();
+        var term = query.val();
         render_output({
-            'title': 'Title',
+            'title': term,
             'tags': [],
             'body': ''
         });
