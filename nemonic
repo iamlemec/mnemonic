@@ -1,0 +1,4 @@
+#!/usr/bin/env python3
+
+import nemonic.viewer.server as serv
+serv.start_server()

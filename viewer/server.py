@@ -1,3 +1,4 @@
+import os
 import json
 import argparse
 import traceback
@@ -7,17 +8,11 @@ import tornado.ioloop
 import tornado.web
 import tornado.websocket
 
-import search_elast as se
-import wiki_parser as wp
+from ..database import search_elast as se
+from ..database import wiki_parser as wp
 
-# parse input arguments
-parser = argparse.ArgumentParser(description='Fuzzy Server.')
-parser.add_argument('--ip', type=str, default='127.0.0.1', help='ip address to listen on')
-parser.add_argument('--port', type=int, default=9050, help='port to serve on')
-args = parser.parse_args()
-
-# hardcoded
-max_res = 20
+# portable
+root = os.path.dirname(__file__)
 
 # searching
 def make_result(info):
@@ -31,7 +26,8 @@ def search(terms, block=True):
 def load_entry(aid):
     ret = se.get_by_id(aid)
     title = ret['title']
-    body = ret['wiki']
+    wiki = ret['wiki']
+    body = wp.to_html(wiki)
     return {'title': title, 'body': body}
 
 class ViewerHandler(tornado.web.RequestHandler):
@@ -53,15 +49,13 @@ class DataHandler(tornado.websocket.WebSocketHandler):
 
     def error_msg(self, error_code):
         if error_code is not None:
-            json_string = json.dumps({'type': 'error', 'code': error_code})
-            self.write_message(json_string)
+            self.send_command('error', error_code)
         else:
             print('error code not found')
 
     def send_command(self, cmd, cont):
         self.write_message(json.dumps({'cmd': cmd, 'content': cont}))
 
-    @authenticated
     def on_message(self, msg):
         data = json.loads(msg)
         cmd, cont = data['cmd'], data['content']
@@ -87,18 +81,18 @@ class DataHandler(tornado.websocket.WebSocketHandler):
 class Application(tornado.web.Application):
     def __init__(self):
         handlers = [
-            (r'/', EditorHandler),
+            (r'/', ViewerHandler),
             (r'/data', DataHandler),
         ]
         settings = dict(
             app_name='Nemonic',
-            template_path='templates',
-            static_path='static',
-            cookie_secret=cookie_secret
+            template_path=os.path.join(root, 'templates'),
+            static_path=os.path.join(root, 'static'),
         )
         tornado.web.Application.__init__(self, handlers, debug=True, **settings)
 
 # create server
-application = Application()
-application.listen(args.port, address=args.ip)
-tornado.ioloop.IOLoop.current().start()
+def start_server(ip='127.0.0.1', port=9050):
+    application = Application()
+    application.listen(port, address=ip)
+    tornado.ioloop.IOLoop.current().start()
