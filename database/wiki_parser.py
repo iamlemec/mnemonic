@@ -6,12 +6,23 @@ import traceback
 # revert html codes
 def html_unescape(text):
     text = hp.unescape(text)
-    text = text.replace(u'\xa0',u' ')
+    text = text.replace('\xa0', ' ')
     return text
 
 # make a normal url
 def escape_link(text):
-    return text.replace(' ','_')
+    return text.replace(' ', '_')
+
+def normalize_text(text):
+    lines = text.split('\n')
+    lines = [s.strip() for s in lines]
+    text = '\n'.join(lines)
+    text = re.sub(r'\n{2,}', '\n\n', text)
+    return text.strip()
+
+def normalize_html(html):
+    html = re.sub(r'(<br/>){2,}','<br/>', html)
+    return html.strip()
 
 # recursively extract text from nodes
 class WikiParser:
@@ -22,7 +33,7 @@ class WikiParser:
         self.foot = 0
         self.inpar = False
 
-    def parse_html(self,node):
+    def parse_html(self, node):
         t = type(node)
         if t is mw.wikicode.Wikicode:
             return ''.join([self.parse_html(n) for n in node.nodes])
@@ -30,7 +41,7 @@ class WikiParser:
             name = node.name.strip()
             if name.startswith('cite'):
                 self.foot += 1
-                return '<sup>%d</sup>' % self.foot
+                return f'<sup>{self.foot}</sup>'
                 #return ' '.join([self.parse_html(node.get(f) if node.has(f) else '') for f in ['title','last1','last2']])
             else:
                 return ''
@@ -41,24 +52,28 @@ class WikiParser:
                 return ''
             else:
                 title = self.parse_html(node.title)
-                return '<a href="%s" class="wikilink">%s</a>' % (escape_link(title),title)
+                link = escape_link(title)
+                return f'<a href="{link}" class="wikilink">{title}</a>'
         elif t is mw.nodes.Heading:
             self.sec = True
-            return '<h3>%s</h3>' % self.parse_html(node.title)
+            title = self.parse_html(node.title)
+            return f'<h3>{title}</h3>'
         elif t is mw.nodes.ExternalLink:
+            url = node.url
             if node.title:
-                return '<a href="%s" class="wikilink">%s</a>' % (node.url,self.parse_html(node.title))
+                title = self.parse_html(node.title)
+                return f'<a href="{url}">{title}</a>'
             else:
-                return '<a href="%s" class="wikilink">%s</a>' % (node.url,node.url)
+                return f'<a href="{url}">{url}</a>'
         elif t is mw.nodes.extras.Parameter:
             return self.parse_html(node.value)
         elif t is mw.nodes.Tag:
             if node.tag == 'ref':
                 # parse contents
                 self.foot += 1
-                return '<sup>%d</sup>' % self.foot
-            elif node.tag in ('li','ol'):
-                return '<br/>\n' + str(node)
+                return f'<sup>{self.foot}</sup>'
+            elif node.tag in ('li', 'ol'):
+                return f'<br/>\n{node}'
             elif node.contents is not None:
                 return self.parse_html(node.contents)
             else:
@@ -81,12 +96,12 @@ class WikiParser:
                 return node[:-2] + '</p>'
             else:
                 if self.inpar:
-                    return node.replace('\n\n','<p></p>')
+                    return node.replace('\n\n', '<p></p>')
                 else:
                     return node
         else:
             traceback.print_stack()
-            raise(Exception('Unrecognized Type %s: %s' % (t,node)))
+            raise(Exception(f'Unrecognized Type {t}: {node}'))
 
     def parse_text(self,node):
         t = type(node)
@@ -118,7 +133,7 @@ class WikiParser:
             else:
                 return self.parse_text(node.contents)
         elif t is mw.nodes.Comment:
-            return self.parse_text(node.contents)
+            return ''
         elif t is mw.nodes.HTMLEntity:
             return node.normalize()
         elif t is mw.nodes.Text:
@@ -127,7 +142,7 @@ class WikiParser:
             return node
         else:
             traceback.print_stack()
-            raise(Exception('Unrecognized Type %s: %s' % (t,node)))
+            raise(Exception(f'Unrecognized Type {t}: {node}'))
 
 # instance
 parser = WikiParser()
@@ -137,7 +152,7 @@ def to_html(wiki):
     tree = mw.parse(wiki)
     parser.initialize()
     html = parser.parse_html(tree)
-    html = re.sub(r'(<br/>){2,}','<br/>',html)
+    html = normalize_html(html)
     return html
 
 def to_text(wiki):
@@ -145,7 +160,19 @@ def to_text(wiki):
     tree = mw.parse(wiki)
     parser.initialize()
     text = parser.parse_text(tree)
-    text = re.sub(r' +\n', '\n', text)
-    text = re.sub(r'\n{2,}', '\n\n', text)
-    return text.strip()
+    text = normalize_text(text)
+    return text
 
+def to_both(wiki):
+    wiki = html_unescape(wiki)
+    tree = mw.parse(wiki)
+
+    parser.initialize()
+    text = parser.parse_text(tree)
+    text = normalize_text(text)
+
+    parser.initialize()
+    html = parser.parse_html(tree)
+    html = normalize_html(html)
+
+    return text, html

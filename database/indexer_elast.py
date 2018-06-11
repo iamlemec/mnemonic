@@ -1,42 +1,63 @@
 # indexer interface
 
 import os
-from elasticsearch import Elasticsearch
+from elasticsearch import Elasticsearch, helpers
 
 doc_article = 'article'
 
+def make_actions(index, docs):
+    for doc in docs:
+        yield {
+            '_index': index,
+            '_type': doc_article,
+            '_source': doc
+        }
+
 class Connection:
-    def __init__(self, index='wikipedia'):
-        self.es = Elasticsearch()
+    def __init__(self, index='wikipedia', **kwargs):
+        self.es = Elasticsearch(**kwargs)
         self.index = index
 
     def create(self, reset=False):
         if reset:
-            try:
+            if self.es.indices.exists(self.index):
                 self.es.indices.delete(self.index)
-            except:
-                pass
-        try:
-            self.es.indices.create(self.index, body={
-                "mappings" : {
-                    doc_article : {
-                        "properties" : {
-                            "title" : {
-                                "type" : "string",
-                                "index" : "not_analyzed"
-                            }
+        self.es.indices.create(self.index, body={
+            'mappings' : {
+                doc_article : {
+                    'properties' : {
+                        'aid': {
+                            'type': 'integer'
+                        },
+                        'title': {
+                            'type': 'text'
+                        },
+                        'rid': {
+                            'type': 'integer'
+                        },
+                        'date': {
+                            'type': 'date'
+                        },
+                        'text': {
+                            'type': 'text'
+                        },
+                        'wiki': {
+                            'type': 'text',
+                            'index': False
                         }
                     }
                 }
-            })
-        except:
-            pass
-
-    def insert(self, id, title, body):
-        return self.es.index(index=self.index, doc_type=doc_article, id=id, body={
-            'title': title,
-            'body': body
+            }
         })
+
+    def settings(self, **opts):
+        return self.es.indices.put_settings(index=self.index, body=opts)
+
+    def insert(self, doc):
+        return self.es.index(index=self.index, doc_type=doc_article, body=doc)
+
+    def bulk(self, docs, **kwargs):
+        return helpers.bulk(self.es, make_actions(self.index, docs), **kwargs)
 
     def delete(self, id):
         return self.es.delete(index=self.index, doc_type=doc_article, id=id)
@@ -93,4 +114,3 @@ class Results:
         self.base += self.size
         self.size = n
         self.res = self.con.search(self.query, base=self.base, size=self.size, raw=True)
-

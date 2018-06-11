@@ -1,0 +1,7 @@
+.line {
+  fill: none;
+  clip-path: url(#clip);
+  stroke: steelblue;
+  stroke-width: 1.5px;
+}
+
