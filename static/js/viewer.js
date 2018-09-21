@@ -39,7 +39,7 @@ function select_entry(box) {
     ensure_visible(box);
     var aid = box.attr('aid');
     if (aid != current) {
-        send_command('load', aid);
+        send_command('load', {'aid': aid});
     }
 }
 
@@ -202,6 +202,12 @@ $(document).ready(function () {
     });
 
     $(document).unbind('click').bind('click', function(event) {
+        var targ = $(event.target);
+        if (targ.hasClass('wikilink')) {
+            var href = targ.attr('href');
+            console.log(href);
+            send_command('load', {'href': href});
+        }
         query.focus();
         return false;
     });

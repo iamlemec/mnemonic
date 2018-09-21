@@ -20,3 +20,10 @@ def get_by_id(aid):
         return
     else:
         return ret[0]
+
+def get_by_title(title):
+    ret = search_field('title', title)
+    if len(ret) == 0:
+        return
+    else:
+        return ret[0]

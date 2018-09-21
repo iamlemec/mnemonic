@@ -8,8 +8,8 @@ import tornado.ioloop
 import tornado.web
 import tornado.websocket
 
-from ..database import search_elast as se
-from ..database import wiki_parser as wp
+from database import search_elast as se
+from database import wiki_parser as wp
 
 # portable
 root = os.path.dirname(__file__)
@@ -23,8 +23,15 @@ def search(terms, block=True):
     return [make_result(x) for x in ret]
 
 # input
-def load_entry(aid):
-    ret = se.get_by_id(aid)
+def load_entry(info):
+    if 'aid' in info:
+        aid = info['aid']
+        ret = se.get_by_id(aid)
+    elif 'href' in info:
+        name = info['href']
+        title = name.replace('_', ' ')
+        print(title)
+        ret = se.get_by_title(title)
     title = ret['title']
     wiki = ret['wiki']
     body = wp.to_html(wiki)
@@ -96,3 +103,6 @@ def start_server(ip='127.0.0.1', port=9050):
     application = Application()
     application.listen(port, address=ip)
     tornado.ioloop.IOLoop.current().start()
+
+if __name__ == '__main__':
+    start_server()
