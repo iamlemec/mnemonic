@@ -8,8 +8,8 @@ import tornado.ioloop
 import tornado.web
 import tornado.websocket
 
-from database import search_elast as se
-from database import wiki_parser as wp
+import database.search_elast as se
+import database.wiki_parser as wp
 
 # portable
 root = os.path.dirname(__file__)
