@@ -58,7 +58,7 @@ def freq_series(tok):
     if idx is None:
         ser = pd.Series(np.zeros(nmon), name=tok)
     else:
-        ser = freqs.ix[idx]
+        ser = freqs.loc[idx]
     ser.index = pd.Index(tvec, name='date')
     return ser
 
@@ -95,4 +95,3 @@ class Application(tornado.web.Application):
 application = Application()
 application.listen(args.port)
 tornado.ioloop.IOLoop.current().start()
-
